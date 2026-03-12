@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>North Star Metric Calculator — Solid Water</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    min-height: 100vh;
+    background: #2d4a5a;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+
+  .wrap { width: 100%; max-width: 560px; }
+
+  /* screens */
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.35s ease forwards; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* logo */
+  .logo-row { margin-bottom: 52px; display: flex; align-items: center; gap: 10px; }
+  .logo-img { height: 24px; object-fit: contain; filter: brightness(0) invert(1); }
+  .logo-text { font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+
+  /* labels */
+  .label-caps {
+    display: block;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: #e8187a; margin-bottom: 14px;
+  }
+
+  /* intro headings */
+  .h-intro {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 6vw, 44px);
+    font-weight: 700; line-height: 1.1;
+    text-transform: uppercase; color: #fff;
+    margin-bottom: 8px;
+  }
+  .h-sub {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 700; line-height: 1.15;
+    margin-bottom: 24px;
+  }
+  .h-sub .pink { color: #e8187a; }
+  .intro-p {
+    font-size: 16px; color: rgba(255,255,255,0.75);
+    line-height: 1.75; margin-bottom: 44px; max-width: 420px;
+  }
+
+  /* input */
+  .sw-input {
+    background: transparent; border: none;
+    border-bottom: 2px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 4vw, 34px);
+    font-style: italic;
+    width: 100%; padding: 10px 0; outline: none;
+    transition: border-color 0.2s;
+    caret-color: #e8187a;
+  }
+  .sw-input::placeholder { color: rgba(255,255,255,0.3); }
+  .sw-input:focus { border-color: #e8187a; }
+
+  /* buttons */
+  .cta-btn {
+    background: #e8187a; color: #fff; border: none;
+    padding: 18px 40px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s; border-radius: 6px;
+  }
+  .cta-btn:hover { background: #c8106a; }
+  .cta-btn.sm { padding: 14px 28px; font-size: 11px; }
+
+  .reset-btn {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+    padding: 12px 24px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; border-radius: 4px;
+  }
+  .reset-btn:hover { border-color: rgba(255,255,255,0.6); color: #fff; }
+
+  /* progress */
+  .progress-bar {
+    height: 3px; background: rgba(255,255,255,0.15);
+    overflow: hidden; width: 100%; border-radius: 2px;
+    margin-bottom: 44px;
+  }
+  .progress-fill {
+    height: 100%; background: #e8187a;
+    border-radius: 2px; transition: width 0.4s ease;
+  }
+
+  /* question heading */
+  .q-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(20px, 4vw, 30px);
+    font-weight: 700; line-height: 1.25;
+    color: #fff; margin-bottom: 28px;
+  }
+
+  /* option buttons */
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    color: #fff; padding: 16px 20px; border-radius: 6px;
+    cursor: pointer; text-align: left;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px; transition: all 0.15s; line-height: 1.4; width: 100%;
+  }
+  .opt-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.6); }
+  .opt-btn.selected { background: #e8187a; border-color: #e8187a; font-weight: 600; }
+
+  /* loading */
+  .spinner {
+    width: 26px; height: 26px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #e8187a; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: inline-block;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .loading-line {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; color: #fff; font-style: italic;
+    transition: opacity 0.3s;
+  }
+  .loading-sub { font-size: 10px; letter-spacing: 0.14em; color: rgba(255,255,255,0.35); text-transform: uppercase; padding-left: 42px; }
+
+  /* result */
+  .nsm-tag {
+    display: inline-block; background: #e8187a; color: #fff;
+    padding: 5px 14px; font-size: 9px; letter-spacing: 0.16em;
+    text-transform: uppercase; font-weight: 700; margin-bottom: 20px; border-radius: 3px;
+  }
+  .nsm-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 700; line-height: 1.15;
+    color: #fff; margin-bottom: 20px;
+    word-break: break-word; text-transform: uppercase;
+  }
+  .result-p { font-size: 16px; line-height: 1.8; color: rgba(255,255,255,0.8); }
+  .divider { height: 1px; background: rgba(255,255,255,0.12); margin: 24px 0; }
+  .metric-row {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .metric-num { font-size: 11px; color: #e8187a; font-weight: 700; min-width: 24px; padding-top: 2px; }
+  .metric-text { font-size: 15px; color: #fff; line-height: 1.5; }
+  .result-foot {
+    border-top: 1px solid rgba(255,255,255,0.12);
+    margin-top: 36px; padding-top: 28px;
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .foot-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+
+  /* error */
+  .error-box {
+    background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.3);
+    border-radius: 4px; padding: 13px 16px; font-size: 13px;
+    color: #ff9090; margin-top: 14px; display: none;
+  }
+  .error-box.show { display: block; }
+
+  @media (max-width: 400px) {
+    body { padding: 32px 18px 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ══════════ SCREEN: INTRO ══════════ -->
+  <div class="screen active" id="s-intro">
+    <div class="logo-row">
+      <img class="logo-img" src="https://static.tildacdn.one/tild6436-3035-4534-b263-383465376137/Frame_438.png" alt="Solid Water"
+           onerror="this.style.display='none'">
+      <span class="logo-text">Solid Water</span>
+    </div>
+
+    <span class="label-caps">North Star Metric Workshop</span>
+    <div class="h-intro">TIRED OF VANITY METRICS?</div>
+    <div class="h-sub">LET'S FOCUS ON <span class="pink">REAL GROWTH.</span></div>
+    <p class="intro-p">Answer 5 questions. We'll identify your North Star Metric — the single number that proves your product is working.</p>
+
+    <span class="label-caps">Your startup name</span>
+    <input class="sw-input" id="startup-name" placeholder="e.g. Acme AI" autocomplete="off"
+           onkeydown="if(event.key==='Enter') startQuiz()">
+
+    <div style="margin-top:36px">
+      <button class="cta-btn" onclick="startQuiz()">LET'S TALK GROWTH →</button>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN: QUESTION ══════════ -->
+  <div class="screen" id="s-question">
+    <div class="logo-row">
+      <img class="logo-img" src="https://static.tildacdn.one/tild6436-3035-4534-b263-383465376137/Frame_438.png" alt="Solid Water"
+           onerror="this.style.display='none'">
+      <span class="logo-text">Solid Water</span>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+
+    <span class="label-caps" id="q-counter"></span>
+    <div class="q-heading" id="q-text"></div>
+    <div class="options" id="q-options"></div>
+  </div>
+
+  <!-- ══════════ SCREEN: LOADING ══════════ -->
+  <div class="screen" id="s-loading">
+    <div class="logo-row">
+      <img class="logo-img" src="https://static.tildacdn.one/tild6436-3035-4534-b263-383465376137/Frame_438.png" alt="Solid Water"
+           onerror="this.style.display='none'">
+      <span class="logo-text">Solid Water</span>
+    </div>
+    <div style="padding: 56px 0">
+      <div class="loading-row">
+        <div class="spinner"></div>
+        <div class="loading-line" id="loading-line">Analysing your business model...</div>
+      </div>
+      <div class="loading-sub">Powered by Claude AI</div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN: RESULT ══════════ -->
+  <div class="screen" id="s-result">
+    <div class="logo-row">
+      <img class="logo-img" src="https://static.tildacdn.one/tild6436-3035-4534-b263-383465376137/Frame_438.png" alt="Solid Water"
+           onerror="this.style.display='none'">
+      <span class="logo-text">Solid Water</span>
+    </div>
+
+    <span class="label-caps" id="result-eyebrow">North Star Metric</span>
+    <span class="nsm-tag">✦ Recommended</span>
+    <div class="nsm-title" id="result-nsm"></div>
+    <p class="result-p" id="result-why"></p>
+
+    <div id="result-inputs-block">
+      <div class="divider"></div>
+      <span class="label-caps">Input metrics that move it</span>
+      <div id="result-inputs"></div>
+    </div>
+
+    <div id="result-trap-block">
+      <div class="divider"></div>
+      <span class="label-caps">⚠ Vanity metric to avoid</span>
+      <p class="result-p" id="result-trap"></p>
+    </div>
+
+    <div id="result-step-block">
+      <div class="divider"></div>
+      <span class="label-caps">Your first step</span>
+      <p class="result-p" id="result-step"></p>
+    </div>
+
+    <div class="result-foot">
+      <div>
+        <div class="foot-label">Want to go deeper?</div>
+        <a href="https://solidwateragency.com/contact">
+          <button class="cta-btn sm">Book a NSM Workshop →</button>
+        </a>
+      </div>
+      <button class="reset-btn" onclick="reset()">Start over</button>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+  // ⚠️ REPLACE WITH YOUR VERCEL PROXY URL
+  const PROXY_URL = '/api/claude';
+
+  const QUESTIONS = [
+    {
+      id: "model",
+      question: "What's your business model?",
+      options: [
+        { label: "SaaS / Subscription",      value: "saas" },
+        { label: "Marketplace / Platform",   value: "marketplace" },
+        { label: "E-commerce / DTC",         value: "ecommerce" },
+        { label: "Fintech / Payments",       value: "fintech" },
+        { label: "Consumer App",             value: "consumer" },
+        { label: "B2B Services / Agency",    value: "b2b_services" },
+      ],
+    },
+    {
+      id: "stage",
+      question: "What's your current stage?",
+      options: [
+        { label: "Pre-seed / Idea",         value: "preseed" },
+        { label: "Seed / Early traction",   value: "seed" },
+        { label: "Series A / Scaling",      value: "series_a" },
+        { label: "Series B+ / Growth",      value: "series_b" },
+      ],
+    },
+    {
+      id: "revenue",
+      question: "How do you primarily make money?",
+      options: [
+        { label: "Monthly / Annual subscriptions", value: "subscription" },
+        { label: "Transaction fees / Commission",  value: "transaction" },
+        { label: "One-time purchases",             value: "one_time" },
+        { label: "Advertising / Data",             value: "advertising" },
+      ],
+    },
+    {
+      id: "value",
+      question: "When does a user experience your core value?",
+      options: [
+        { label: "Every time they use the product", value: "recurring" },
+        { label: "When they complete a transaction", value: "transactional" },
+        { label: "Over time / Habit formation",     value: "habitual" },
+        { label: "At a specific milestone",         value: "milestone" },
+      ],
+    },
+    {
+      id: "goal",
+      question: "What's your #1 priority right now?",
+      options: [
+        { label: "Prove product-market fit",       value: "pmf" },
+        { label: "Grow the user base fast",        value: "growth" },
+        { label: "Increase revenue per user",      value: "monetisation" },
+        { label: "Improve retention / reduce churn", value: "retention" },
+      ],
+    },
+  ];
+
+  const LOADING_LINES = [
+    "Analysing your business model...",
+    "Mapping your growth levers...",
+    "Identifying core value moments...",
+    "Calibrating North Star candidates...",
+    "Finalising your recommendation...",
+  ];
+
+  let answers = {};
+  let currentQ = 0;
+  let startupName = "";
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active');
+    });
+    const el = document.getElementById(id);
+    el.classList.add('active');
+    // re-trigger animation
+    el.style.animation = 'none';
+    el.offsetHeight; // reflow
+    el.style.animation = '';
+    window.scrollTo(0, 0);
+  }
+
+  function startQuiz() {
+    startupName = document.getElementById('startup-name').value.trim() || 'Your startup';
+    currentQ = 0;
+    renderQuestion();
+    showScreen('s-question');
+  }
+
+  function renderQuestion() {
+    const q = QUESTIONS[currentQ];
+    const pct = (currentQ / QUESTIONS.length) * 100;
+
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('q-counter').textContent = `Question ${currentQ + 1} of ${QUESTIONS.length}`;
+    document.getElementById('q-text').textContent = q.question;
+
+    const container = document.getElementById('q-options');
+    container.innerHTML = '';
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn' + (answers[q.id] === opt.value ? ' selected' : '');
+      btn.textContent = opt.label;
+      btn.onclick = () => selectAnswer(q.id, opt.value);
+      container.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(qId, value) {
+    answers[qId] = value;
+    // highlight selected
+    document.querySelectorAll('#q-options .opt-btn').forEach(b => b.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+
+    if (currentQ < QUESTIONS.length - 1) {
+      setTimeout(() => {
+        currentQ++;
+        renderQuestion();
+        // re-animate
+        const s = document.getElementById('s-question');
+        s.style.animation = 'none'; s.offsetHeight; s.style.animation = '';
+      }, 300);
+    } else {
+      setTimeout(() => generateNSM(), 300);
+    }
+  }
+
+  async function generateNSM() {
+    showScreen('s-loading');
+
+    let lineIdx = 0;
+    const lineEl = document.getElementById('loading-line');
+    const interval = setInterval(() => {
+      lineIdx = Math.min(lineIdx + 1, LOADING_LINES.length - 1);
+      lineEl.style.opacity = 0;
+      setTimeout(() => {
+        lineEl.textContent = LOADING_LINES[lineIdx];
+        lineEl.style.opacity = 1;
+      }, 150);
+    }, 900);
+
+    const prompt = `You are a world-class growth strategist at Solid Water, a growth marketing agency.
+
+A startup has completed a diagnostic. Based on their profile, recommend their ideal North Star Metric.
+
+Startup name: ${startupName}
+Business model: ${answers.model}
+Stage: ${answers.stage}
+Revenue model: ${answers.revenue}
+Value moment: ${answers.value}
+Current priority: ${answers.goal}
+
+Respond ONLY in this exact JSON format (no markdown, no extra text):
+{
+  "nsm": "The exact metric name (5-8 words max)",
+  "why": "2-3 sentences explaining why this is their North Star — be specific to their model and stage",
+  "inputs": ["input metric 1", "input metric 2", "input metric 3"],
+  "trap": "One common vanity metric they should NOT focus on instead (1 sentence)",
+  "first_step": "The single most important first action to start measuring this (1 sentence)"
+}`;
+
+    try {
+      const res = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: 'You are a world-class growth strategist. Always respond in valid JSON only, no markdown.',
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      const data = await res.json();
+      const text = data.content?.map(c => c.text || '').join('') || '{}';
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+
+      clearInterval(interval);
+      renderResult(parsed);
+
+    } catch(e) {
+      clearInterval(interval);
+      showScreen('s-result');
+      const errEl = document.getElementById('error-box');
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.classList.add('show');
+    }
+  }
+
+  function renderResult(r) {
+    document.getElementById('result-eyebrow').textContent =
+      'North Star Metric' + (startupName ? ` for ${startupName}` : '');
+    document.getElementById('result-nsm').textContent = r.nsm || 'Could not determine metric';
+    document.getElementById('result-why').textContent = r.why || '';
+    document.getElementById('result-trap').textContent = r.trap || '';
+    document.getElementById('result-step').textContent = r.first_step || '';
+
+    // input metrics
+    const inputsEl = document.getElementById('result-inputs');
+    inputsEl.innerHTML = '';
+    const inputsBlock = document.getElementById('result-inputs-block');
+    if (r.inputs && r.inputs.length) {
+      inputsBlock.style.display = 'block';
+      r.inputs.forEach((inp, i) => {
+        const row = document.createElement('div');
+        row.className = 'metric-row';
+        row.innerHTML = `<span class="metric-num">0${i+1}</span><span class="metric-text">${inp}</span>`;
+        inputsEl.appendChild(row);
+      });
+    } else {
+      inputsBlock.style.display = 'none';
+    }
+
+    document.getElementById('result-trap-block').style.display = r.trap ? 'block' : 'none';
+    document.getElementById('result-step-block').style.display = r.first_step ? 'block' : 'none';
+    document.getElementById('error-box').classList.remove('show');
+
+    showScreen('s-result');
+  }
+
+  function reset() {
+    answers = {};
+    currentQ = 0;
+    startupName = '';
+    document.getElementById('startup-name').value = '';
+    document.getElementById('error-box').classList.remove('show');
+    showScreen('s-intro');
+  }
+</script>
+</body>
+</html>

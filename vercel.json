@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "functions": {
+    "api/claude.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "routes": [
+    { "src": "/api/claude", "dest": "/api/claude" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
